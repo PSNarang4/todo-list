@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Professional To-Do List</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #1d1f21;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+        }
+
+        .container {
+            background-color: bisque;
+            padding: 80px;
+            border-radius: 15px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+            width: 100%;
+            max-width: 900px;
+            text-align: center;
+            height: 900px;
+            font-family: Arial, Helvetica, sans-serif;
+        }
+
+        h1 {
+            margin-bottom: 30px;
+            font-size: 32px;
+            color: #333;
+        }
+
+        .input-container {
+            display: flex;
+            margin-bottom: 20px;
+        }
+
+        #todo-input {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+            margin-right: 10px;
+        }
+
+        #add-btn {
+            padding: 15px;
+            background-color: #5cb85c;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            flex-basis: 30%;
+        }
+
+        #add-btn:hover {
+            background-color: #4cae4c;
+        }
+
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        li {
+            background-color: #f9f9f9;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background-color 0.3s ease;
+        }
+
+        li.completed {
+            text-decoration: line-through;
+            background-color: #dff0d8;
+        }
+
+        li:hover {
+            background-color: #f0f0f0;
+        }
+
+        li .delete-btn {
+            background-color: #d9534f;
+            border: none;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        li .delete-btn:hover {
+            background-color: #c9302c;
+        }
+
+        #clear-btn {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #d9534f;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        #clear-btn:hover {
+            background-color: #c9302c;
+        }
+
+        .task-counter {
+            margin-top: 20px;
+            font-size: 18px;
+            color: #666;
+        }
+
+        @media(max-width: 768px) {
+            .container {
+                width: 90%;
+            }
+
+            #add-btn {
+                font-size: 14px;
+            }
+
+            #todo-input {
+                font-size: 14px;
+            }
+
+            li {
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Your Own To-do List</h1>
+        <div class="input-container">
+            <input type="text" id="todo-input" placeholder="Enter a new task...">
+            <button id="add-btn">Add Task</button>
+        </div>
+        <ul id="todo-list"></ul>
+        <button id="clear-btn">Clear All Tasks</button>
+        <div class="task-counter" id="task-counter">No tasks added yet.</div>
+    </div>
+
+    <script>
+        // Select elements
+        const todoInput = document.getElementById('todo-input');
+        const addBtn = document.getElementById('add-btn');
+        const todoList = document.getElementById('todo-list');
+        const clearBtn = document.getElementById('clear-btn');
+        const taskCounter = document.getElementById('task-counter');
+
+        // Load todos from localStorage on page load
+        document.addEventListener('DOMContentLoaded', loadTodos);
+
+        // Add event listeners
+        addBtn.addEventListener('click', addTodo);
+        clearBtn.addEventListener('click', clearAllTasks);
+
+        // Load todos from localStorage
+        function loadTodos() {
+            const todos = JSON.parse(localStorage.getItem('todos')) || [];
+            todos.forEach(todo => addTodoToDOM(todo));
+            updateTaskCounter();
+        }
+
+        // Function to add a new todo
+        function addTodo() {
+            const todoText = todoInput.value.trim();
+            if (todoText === "") {
+                alert("Please enter a task!");
+                return;
+            }
+
+            // Add todo to localStorage
+            const todos = JSON.parse(localStorage.getItem('todos')) || [];
+            todos.push({ text: todoText, completed: false });
+            localStorage.setItem('todos', JSON.stringify(todos));
+
+            // Add todo to the DOM
+            addTodoToDOM({ text: todoText, completed: false });
+
+            // Clear input field
+            todoInput.value = "";
+            updateTaskCounter();
+        }
+
+        // Add todo to the DOM
+        function addTodoToDOM(todo) {
+            const li = document.createElement('li');
+            li.textContent = todo.text;
+            if (todo.completed) {
+                li.classList.add('completed');
+            }
+
+            // Toggle completion on click
+            li.addEventListener('click', () => {
+                li.classList.toggle('completed');
+                toggleTodoCompletion(todo.text);
+                updateTaskCounter();
+            });
+
+            // Create delete button
+            const deleteBtn = document.createElement('button');
+            deleteBtn.textContent = "Delete";
+            deleteBtn.classList.add('delete-btn');
+            deleteBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                removeTodoFromStorage(todo.text);
+                todoList.removeChild(li);
+                updateTaskCounter();
+            });
+
+            // Append delete button to list item
+            li.appendChild(deleteBtn);
+
+            // Add list item to todo list
+            todoList.appendChild(li);
+        }
+
+        // Toggle completion status in localStorage
+        function toggleTodoCompletion(todoText) {
+            const todos = JSON.parse(localStorage.getItem('todos')) || [];
+            const updatedTodos = todos.map(todo => {
+                if (todo.text === todoText) {
+                    todo.completed = !todo.completed;
+                }
+                return todo;
+            });
+            localStorage.setItem('todos', JSON.stringify(updatedTodos));
+        }
+
+        // Remove todo from localStorage
+        function removeTodoFromStorage(todoText) {
+            let todos = JSON.parse(localStorage.getItem('todos')) || [];
+            todos = todos.filter(todo => todo.text !== todoText);
+            localStorage.setItem('todos', JSON.stringify(todos));
+        }
+
+        // Clear all tasks
+        function clearAllTasks() {
+            localStorage.removeItem('todos');
+            todoList.innerHTML = '';
+            updateTaskCounter();
+        }
+
+        // Update task counter
+        function updateTaskCounter() {
+            const todos = JSON.parse(localStorage.getItem('todos')) || [];
+            const remainingTasks = todos.filter(todo => !todo.completed).length;
+            taskCounter.textContent = `${remainingTasks} task${remainingTasks !== 1 ? 's' : ''} remaining`;
+        }
+    </script>
+</body>
+</html>
